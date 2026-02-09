@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投掷参数对比分析</title>
+    <!-- 引入 Chart.js 和 DataLabels 插件 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+        }
+
+        .table-container {
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            color: #334155;
+        }
+        
+        .data-table th, .data-table td {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .data-table th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+        }
+        
+        .data-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .analysis-box {
+            margin-top: 12px;
+            padding: 12px 15px;
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            border-radius: 0 4px 4px 0;
+            font-size: 13px;
+            color: #1e3a8a;
+            line-height: 1.5;
+        }
+        
+        .analysis-box strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #1e40af;
+        }
+        
+        .analysis-box li {
+            margin-bottom: 6px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .chart-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #475569;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 300px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            color: #3b82f6;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #475569;
+        }
+
+        .metric-main {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .metric-main .label {
+            font-size: 13px;
+            color: #92400e;
+            margin-bottom: 5px;
+        }
+
+        .metric-main .value-group {
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .metric-main .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #b45309;
+            font-family: "D-DIN", sans-serif;
+            line-height: 1;
+        }
+
+        .metric-main .unit {
+            font-size: 14px;
+            color: #92400e;
+            font-weight: 500;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .metric-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .metric-box .value-group {
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            gap: 2px;
+        }
+
+        .metric-box.highlight {
+            background: #fff7ed;
+            border-color: #ffedd5;
+        }
+
+        .metric-box .label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .metric-box .value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0f172a;
+            font-family: "D-DIN", sans-serif;
+            line-height: 1;
+        }
+        
+        .metric-box.highlight .value {
+            color: #c2410c;
+        }
+
+        .metric-box .unit {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        @font-face {
+            font-family: 'D-DIN';
+            src: local('Arial'); /* Fallback */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cards-container">
+        <!-- 卡片 1 -->
+        <div class="card">
+        <div class="card-header">
+            <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <div class="card-title">出手参数 (No.2)</div>
+        </div>
+        
+        <div class="metric-main">
+            <div class="label">出手速度</div>
+            <div class="value-group">
+                <div class="value">7.50</div>
+                <div class="unit">m/s</div>
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-box">
+                <div class="label">出手高度</div>
+                <div class="value-group">
+                    <div class="value">1.97</div>
+                    <div class="unit">m</div>
+                </div>
+            </div>
+            <div class="metric-box">
+                <div class="label">出手角度</div>
+                <div class="value-group">
+                    <div class="value">30.7</div>
+                    <div class="unit">°</div>
+                </div>
+            </div>
+            <div class="metric-box highlight">
+                <div class="label">预估距离</div>
+                <div class="value-group">
+                    <div class="value">7.32</div>
+                    <div class="unit">m</div>
+                </div>
+            </div>
+            <div class="metric-box">
+                <div class="label">最大速度</div>
+                <div class="value-group">
+                    <div class="value">7.50</div>
+                    <div class="unit">m/s</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+            <div class="label" style="font-size: 12px; color: #64748b; margin-bottom: 8px;">动作回放</div>
+            <img src="jzc/20260209213835.gif" alt="投掷动作回放" style="width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;">
+        </div>
+    </div>
+
+    <!-- 卡片 2 -->
+    <div class="card">
+        <div class="card-header">
+            <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <div class="card-title">出手参数 (No.3)</div>
+        </div>
+        
+        <div class="metric-main">
+            <div class="label">出手速度</div>
+            <div class="value-group">
+                <div class="value">7.86</div>
+                <div class="unit">m/s</div>
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-box">
+                <div class="label">出手高度</div>
+                <div class="value-group">
+                    <div class="value">1.98</div>
+                    <div class="unit">m</div>
+                </div>
+            </div>
+            <div class="metric-box">
+                <div class="label">出手角度</div>
+                <div class="value-group">
+                    <div class="value">31.6</div>
+                    <div class="unit">°</div>
+                </div>
+            </div>
+            <div class="metric-box highlight">
+                <div class="label">预估距离</div>
+                <div class="value-group">
+                    <div class="value">7.91</div>
+                    <div class="unit">m</div>
+                </div>
+            </div>
+            <div class="metric-box">
+                <div class="label">最大速度</div>
+                <div class="value-group">
+                    <div class="value">7.86</div>
+                    <div class="unit">m/s</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+            <div class="label" style="font-size: 12px; color: #64748b; margin-bottom: 8px;">动作回放</div>
+            <img src="jzc/20260209214118.gif" alt="投掷动作回放" style="width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;">
+        </div>
+    </div>
+
+    <!-- 卡片 3 -->
+    <div class="card">
+        <div class="card-header">
+            <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <div class="card-title">出手参数 (No.4)</div>
+        </div>
+        
+        <div class="metric-main">
+            <div class="label">出手速度</div>
+            <div class="value-group">
+                <div class="value">8.50</div>
+                <div class="unit">m/s</div>
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-box">
+                <div class="label">出手高度</div>
+                <div class="value-group">
+                    <div class="value">1.89</div>
+                    <div class="unit">m</div>
+                </div>
+            </div>
+            <div class="metric-box">
+                <div class="label">出手角度</div>
+                <div class="value-group">
+                    <div class="value">33.2</div>
+                    <div class="unit">°</div>
+                </div>
+            </div>
+            <div class="metric-box highlight">
+                <div class="label">预估距离</div>
+                <div class="value-group">
+                    <div class="value">8.93</div>
+                    <div class="unit">m</div>
+                </div>
+            </div>
+            <div class="metric-box">
+                <div class="label">最大速度</div>
+                <div class="value-group">
+                    <div class="value">8.50</div>
+                    <div class="unit">m/s</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+            <div class="label" style="font-size: 12px; color: #64748b; margin-bottom: 8px;">动作回放</div>
+            <img src="jzc/20260209213416.gif" alt="投掷动作回放" style="width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;">
+        </div>
+    </div>
+    
+    <!-- 图表区域 -->
+    <div class="charts-container">
+        <!-- 抛物线轨迹对比图 -->
+        <div class="chart-card">
+            <div class="chart-title">抛物线轨迹模拟 (Side View)</div>
+            <canvas id="trajectoryChart"></canvas>
+        </div>
+        
+        <!-- 速度对比图 -->
+        <div class="chart-card">
+            <div class="chart-title">出手速度对比</div>
+            <canvas id="speedChart"></canvas>
+        </div>
+
+        <!-- 距离与角度关系图 -->
+        <div class="chart-card">
+            <div class="chart-title">距离-角度效率分析</div>
+            <canvas id="angleEfficiencyChart"></canvas>
+            <div class="analysis-box">
+                <strong>💡 投掷效率综合评估</strong>
+                此图展示了出手角度（横轴）、投掷距离（纵轴）与出手速度（气泡大小）的三维关系。No.4 (紫色) 位于图表最右上方，表明其结合了最佳的出手角度 (33.2°) 和最快的初速度 (8.50 m/s)，从而获得了最远的投掷距离。No.2 (蓝色) 虽然高度不错，但受限于较小的出手角度 (30.7°) 和较低的初速度，导致效率最低。这提示我们，在保证速度的前提下，适当提高出手角度（接近 35°-38°）是提升成绩的关键。
+            </div>
+        </div>
+
+        <!-- 阶段耗时对比图 -->
+        <div class="chart-card">
+            <div class="chart-title">各阶段耗时对比 (Phase Duration)</div>
+            <canvas id="durationChart"></canvas>
+            <div class="analysis-box">
+                <strong>💡 动作节奏分析</strong>
+                此图对比了三次投掷在各个关键阶段的耗时。
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    <li>单支撑 (右离-左离)：预备与启动阶段。</li>
+                    <li>腾空 (左离-右落)：空中过渡，No.2/3/4 均为 0.14s，极其稳定。</li>
+                    <li>过渡 (右落-左落)：关键的转换期，No.4 耗时适中。</li>
+                    <li>最后用力 (左落-出手)：No.4 仅用时 0.15s (紫色)，显著短于 No.2 (0.24s) 和 No.3 (0.23s)，这就是爆发力的直接体现。</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="chart-card" style="grid-column: 1 / -1;">
+            <div class="chart-title">球速变化对比 (Ball Speed)</div>
+            <canvas id="ballSpeedChart"></canvas>
+            <div class="table-container" id="ballSpeedTable"></div>
+            <div class="analysis-box">
+                <strong>💡 速度节奏分析</strong>
+                No.4 (紫色) 在“左落”到“出手”的最后用力阶段展现了最陡峭的加速斜率，说明其爆发力最强，能量传递效率最高。
+                <br><br>
+                <strong>No.3 (橙色) 的速度异常分析：</strong>
+                No.3 在最后用力阶段初期（左落后）的加速度也非常可观，甚至一度接近 No.4。然而，在接近出手的最后瞬间，其速度反而出现了下降趋势（曲线末端下弯）。
+                这通常是由于“过早离手”或“动作脱节”造成的——即身体力量尚未完全传递到末端时，球就已经脱手；或者是因为左侧支撑过早松懈（从左膝角度图可见其支撑不够稳固），导致动量链断裂，使得最后推球的一刹那无法维持最高速度，只能遗憾地以减速状态出手。
+            </div>
+        </div>
+
+        <div class="chart-card" style="grid-column: 1 / -1;">
+            <div class="chart-title">右肘关节角度变化 (Right Elbow)</div>
+            <canvas id="elbowChart"></canvas>
+            <div class="table-container" id="elbowTable"></div>
+            <div class="analysis-box">
+                <strong>💡 推球伸臂分析</strong>
+                右肘角度反映了推球发力的时机。在“左落”时刻，右肘应保持适当屈曲（约 90°-110°）以储备弹性能量。随后在躯干扭转带动下迅速伸展，出手瞬间应接近 180°（完全伸直）。过早伸臂会导致力量分散，过晚则无法充分利用三头肌爆发力。
+            </div>
+        </div>
+        
+        <div class="chart-card" style="grid-column: 1 / -1;">
+            <div class="chart-title">右膝关节角度变化 (Right Knee)</div>
+            <canvas id="kneeChart"></canvas>
+            <div class="table-container" id="kneeTable"></div>
+            <div class="analysis-box">
+                <strong>💡 右腿蹬伸分析</strong>
+                右腿是旋转推铅球的动力之源。在“右落”到“左落”的过渡阶段，右膝应保持屈曲（<140°）以维持重心平稳。进入“最后用力”阶段后，右膝应积极内扣并爆发性蹬伸。曲线斜率越大，说明蹬地速度越快，对髋部转动的驱动力越强。
+            </div>
+        </div>
+
+        <div class="chart-card" style="grid-column: 1 / -1;">
+            <div class="chart-title">左膝关节角度变化 (Left Knee)</div>
+            <canvas id="kneeLChart"></canvas>
+            <div class="table-container" id="kneeLTable"></div>
+            <div class="analysis-box">
+                <strong>💡 左侧支撑与制动深度解析</strong>
+                左膝的关键作用是“制动”(Block)。在“左落”后，左膝应迅速锁定并有力伸直，形成坚固的支点，迫使躯干和投掷臂加速向前上方摆动。
+                <br><br>
+                <strong>No.4 (紫色) 的“反常”曲线解释：</strong>
+                观察曲线可见，No.4 在左落前保持了极低的左膝角度（约 120°，甚至略有下降），这与 No.2/No.3 的逐渐伸直趋势截然不同。
+                <ul>
+                    <li>蓄力更深：No.4 在落地瞬间通过更深的屈膝来缓冲并储备弹性势能，就像压缩弹簧一样。</li>
+                    <li>爆发更猛：随后在“左落”到“出手”的极短时间内，左膝角度呈现出近乎垂直的陡峭上升（快速伸直）。这种瞬间的爆发性伸膝（Kick），产生了比渐进式伸膝更强大的垂直反作用力，极大地提升了躯干的抬起速度和出手高度。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="chart-card" style="grid-column: 1 / -1;">
+            <div class="chart-title">躯干倾角变化 (Trunk Inclination)</div>
+            <canvas id="trunkChart"></canvas>
+            <div class="table-container" id="trunkTable"></div>
+            <div class="analysis-box">
+                <strong>💡 躯干姿态控制 (左落-出手阶段)</strong>
+                此阶段是决定出手高度和角度的关键期。观察数据可见，No.4 (紫色) 在“左落”到“出手”区间的躯干倾角数值最低（即最接近垂直或略微前倾）。
+                <br><br>
+                这意味着 No.4 在最后用力时，躯干没有过度后仰，而是更积极地向前上方挺身跟进。这种姿态有助于将身体重心压在球后，不仅能更有效地将下肢蹬伸力量传递给铅球（减少垂直分力的浪费），还能获得更快的水平出手速度，这与其最终的高球速表现是一致的。
+            </div>
+        </div>
+
+        <div class="chart-card" style="grid-column: 1 / -1;">
+            <div class="chart-title">髋肩分离角 (Hip-Shoulder Separation)</div>
+            <canvas id="sepChart"></canvas>
+            <div class="table-container" id="sepTable"></div>
+            <div class="analysis-box">
+                <strong>💡 核心扭转与超越器械深度解析</strong>
+                为了精准评估“超越器械”的效果，我们需要关注右落 (R-Land)到左落 (L-Land)这一过渡阶段的角度变化与时间效率：
+                <br><br>
+                1. 右落时刻 (预张力建立)</strong>：比较三者在右脚刚落地时的初始分离角。No.4 在此处的角度显著高于其他两次，说明在腾空结束时就已经建立了极佳的躯干扭转预备姿态。
+                <br>
+                2. 左落时刻 (扭转保持)</strong>：虽然 No.4 在左落时刻的绝对角度数值可能不是最大（因为动作节奏极快，下肢转动迅速），但结合其极短的过渡时间来看，它在极高速度下依然保持了有效的扭转结构。
+                <br>
+                3. 过渡效率 (Δ角度 / Δ时间)</strong>：
+                <ul>
+                    <li>No.4 最显著的特征是其动作速率。从右落到左落的过渡时间极短，且紧接着在左落到出手的最后用力阶段，分离角以最快的速度归零。</li>
+                    <li>这意味着 No.4 的角速度 (Angular Velocity) 和功率输出是最高的。虽然“左落”时刻的静态角度可能略小（因为下肢转得太快了），但其动态释放的爆发力却是最强的。</li>
+                </ul>
+                <br>
+                <strong>结论：No.4 的优势不在于静态的“最大扭转角”，而在于动态的“最大扭转速度”。它以更快的节奏完成了“拉伸-回缩”周期，将核心肌群的弹性势能以更高的功率密度转化为了出手速度。
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入生成的关节角度数据 -->
+    <script src="angle_data.js"></script>
+
+    <script>
+        // 数据准备
+        const dataPoints = [
+            { label: 'No.2', speed: 7.50, height: 1.97, angle: 30.7, distance: 7.32, color: '#3b82f6' },
+            { label: 'No.3', speed: 7.86, height: 1.98, angle: 31.6, distance: 7.91, color: '#f97316' },
+            { label: 'No.4', speed: 8.50, height: 1.89, angle: 33.2, distance: 8.93, color: '#8b5cf6' }
+        ];
+
+        // 注册插件
+        Chart.register(ChartDataLabels);
+
+        // 1. 抛物线轨迹计算
+        function calculateTrajectory(v0, h0, angleDeg, steps = 50) {
+            const g = 9.81;
+            const angleRad = angleDeg * Math.PI / 180;
+            const vx = v0 * Math.cos(angleRad);
+            const vy0 = v0 * Math.sin(angleRad);
+            
+            // 计算飞行总时间
+            // h = h0 + vy0*t - 0.5*g*t^2 => 0.5gt^2 - vy0*t - h0 = 0
+            const t_total = (vy0 + Math.sqrt(vy0*vy0 + 2*g*h0)) / g;
+            
+            const points = [];
+            for (let i = 0; i <= steps; i++) {
+                const t = (i / steps) * t_total;
+                const x = vx * t;
+                const y = h0 + vy0 * t - 0.5 * g * t * t;
+                if (y >= 0) points.push({x, y});
+            }
+            return points;
+        }
+
+        // 初始化轨迹图
+        new Chart(document.getElementById('trajectoryChart'), {
+            type: 'scatter',
+            data: {
+                datasets: dataPoints.map(dp => ({
+                    label: `${dp.label} (${dp.distance}m)`,
+                    data: calculateTrajectory(dp.speed, dp.height, dp.angle),
+                    borderColor: dp.color,
+                    backgroundColor: dp.color,
+                    showLine: true,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 0 // 隐藏点，只显示线
+                }))
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: { display: true, text: '距离 (m)' },
+                        min: 0,
+                        max: 10
+                    },
+                    y: {
+                        title: { display: true, text: '高度 (m)' },
+                        min: 0,
+                        max: 4
+                    }
+                },
+                plugins: {
+                    datalabels: { display: false } // 禁用此图表的标签
+                }
+            }
+        });
+
+        // 2. 速度对比柱状图
+        new Chart(document.getElementById('speedChart'), {
+            type: 'bar',
+            data: {
+                labels: dataPoints.map(d => d.label),
+                datasets: [{
+                    label: '出手速度 (m/s)',
+                    data: dataPoints.map(d => d.speed),
+                    backgroundColor: dataPoints.map(d => d.color),
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        title: { display: true, text: '速度 (m/s)' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        color: '#475569',
+                        font: {
+                            weight: 'bold',
+                            size: 14
+                        },
+                        formatter: (value) => value.toFixed(2)
+                    }
+                }
+            }
+        });
+
+        // 3. 距离-角度雷达图/极坐标图 (这里用散点图模拟二维分布)
+        new Chart(document.getElementById('angleEfficiencyChart'), {
+            type: 'bubble',
+            data: {
+                datasets: dataPoints.map(dp => ({
+                    label: dp.label,
+                    data: [{
+                        x: dp.angle,
+                        y: dp.distance,
+                        r: dp.speed * 1.5 // 气泡大小代表速度
+                    }],
+                    backgroundColor: dp.color
+                }))
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    datalabels: { display: false }, // 禁用此图表的标签
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const p = ctx.raw;
+                                return `${ctx.dataset.label}: ${p.y}m (∠${p.x}°)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: '出手角度 (°)' },
+                        min: 28,
+                        max: 36
+                    },
+                    y: {
+                        title: { display: true, text: '投掷距离 (m)' },
+                        min: 6,
+                        max: 10
+                    }
+                }
+            }
+        });
+
+        // 3.5 阶段耗时对比图
+        // 数据来源于之前的分析
+        // No.2: 单支撑(0.42), 腾空(0.14), 过渡(0.22), 发力(0.24)
+        // No.3: 单支撑(0.40), 腾空(0.14), 过渡(0.23), 发力(0.23)
+        // No.4: 单支撑(0.43), 腾空(0.14), 过渡(0.29), 发力(0.15)
+        
+        new Chart(document.getElementById('durationChart'), {
+            type: 'bar',
+            data: {
+                labels: ['No.2', 'No.3', 'No.4'],
+                datasets: [
+                    { label: '单支撑', data: [0.42, 0.40, 0.43], backgroundColor: '#e2e8f0' },
+                    { label: '腾空',   data: [0.14, 0.14, 0.14], backgroundColor: '#cbd5e1' },
+                    { label: '过渡',   data: [0.22, 0.23, 0.29], backgroundColor: '#94a3b8' },
+                    { label: '最后用力', data: [0.24, 0.23, 0.15], backgroundColor: ['#3b82f6', '#f97316', '#8b5cf6'] } // 使用各自的主色高亮最后用力
+                ]
+            },
+            options: {
+                responsive: true,
+                indexAxis: 'y', // 水平堆叠条形图
+                scales: {
+                    x: { stacked: true, title: { display: true, text: '时间 (s)' } },
+                    y: { stacked: true }
+                },
+                plugins: {
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        color: '#0f172a',
+                        font: { size: 11, weight: 'bold' },
+                        formatter: (v) => v > 0 ? v.toFixed(2) + 's' : ''
+                    }
+                }
+            }
+        });
+
+        // 4. 关节角度曲线图
+        // 颜色映射
+        const colorMap = {
+            'No.2': '#3b82f6',
+            'No.3': '#f97316',
+            'No.4': '#8b5cf6'
+        };
+
+        function createPhaseChart(canvasId, labelKey, yAxisConfig) {
+            if (typeof angleData === 'undefined') return;
+            
+            // 获取数据
+            const d2 = angleData.find(item => item.label === 'No.2');
+            const d3 = angleData.find(item => item.label === 'No.3');
+            const d4 = angleData.find(item => item.label === 'No.4');
+            if (!d2 || !d3 || !d4) return;
+
+            // 定义对齐点（右脚离地时刻）
+            const t0_2 = 1.24;
+            const t0_3 = 2.13;
+            const t0_4 = 1.92;
+
+            // 构建相对时间数据
+            const processData = (d, t0, t_end) => {
+                // 截取 t0 前 0.5s 到 动作结束 (t_end) 的数据
+                const startT = t0 - 0.5;
+                const endT = t_end;
+                
+                return d.times
+                    .map((t, i) => ({ t, val: d[labelKey][i] }))
+                    .filter(item => item.t >= startT && item.t <= endT)
+                    .map(item => ({ x: item.t - t0, y: item.val }));
+            };
+
+            // 各自的结束时间 (出手时间)
+            const t_end_2 = 2.26;
+            const t_end_3 = 3.13;
+            const t_end_4 = 2.93;
+
+            // 找出相对时间中最大的那个，作为图表的 X 轴上限
+            const max_relative_end = Math.max(
+                t_end_2 - t0_2,
+                t_end_3 - t0_3,
+                t_end_4 - t0_4
+            );
+
+            const data2 = processData(d2, t0_2, t_end_2);
+            const data3 = processData(d3, t0_3, t_end_3);
+            const data4 = processData(d4, t0_4, t_end_4);
+
+            // 定义关键时刻（相对时间）
+            // No.2: 1.24, 1.66, 1.80, 2.02, 2.26
+            const events2 = [
+                { t: 0, label: '右离' },
+                { t: 1.66-1.24, label: '左离' },
+                { t: 1.80-1.24, label: '右落' },
+                { t: 2.02-1.24, label: '左落' },
+                { t: 2.26-1.24, label: '出手' }
+            ];
+            
+            // No.3: 2.13, 2.53, 2.67, 2.90, 3.13
+            const events3 = [
+                { t: 0, label: '右离' },
+                { t: 2.53-2.13, label: '左离' },
+                { t: 2.67-2.13, label: '右落' },
+                { t: 2.90-2.13, label: '左落' },
+                { t: 3.13-2.13, label: '出手' }
+            ];
+
+            // No.4: 1.92, 2.35, 2.49, 2.78, 2.93
+            const events4 = [
+                { t: 0, label: '右离' },
+                { t: 2.35-1.92, label: '左离' },
+                { t: 2.49-1.92, label: '右落' },
+                { t: 2.78-1.92, label: '左落' },
+                { t: 2.93-1.92, label: '出手' }
+            ];
+
+            // 插件：绘制垂直辅助线
+            const verticalLinesPlugin = {
+                id: 'verticalLines',
+                beforeDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    const xAxis = chart.scales.x;
+                    const yAxis = chart.scales.y;
+
+                    const drawEventLines = (events, color, offset) => {
+                        events.forEach(e => {
+                            const x = xAxis.getPixelForValue(e.t);
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.strokeStyle = color.replace('1)', '0.4)'); // Make transparent
+                            ctx.lineWidth = 1;
+                            ctx.setLineDash(offset === 0 ? [5, 5] : (offset > 0 ? [2, 2] : [8, 4]));
+                            ctx.moveTo(x, yAxis.top);
+                            ctx.lineTo(x, yAxis.bottom);
+                            ctx.stroke();
+                            
+                            // Label
+                            ctx.fillStyle = color;
+                            ctx.font = '10px Arial';
+                            ctx.textAlign = 'center';
+                            
+                            let yPos = yAxis.top + 10;
+                            if (offset > 0) yPos = yAxis.bottom - 10;
+                            if (offset < 0) yPos = yAxis.top + 25;
+                            
+                            ctx.fillText(e.label, x, yPos);
+                            ctx.restore();
+                        });
+                    };
+
+                    drawEventLines(events2, '#3b82f6', 0);   // No.2 Blue
+                    drawEventLines(events3, '#f97316', 1);   // No.3 Orange
+                    drawEventLines(events4, '#8b5cf6', -1);  // No.4 Purple
+                }
+            };
+
+            new Chart(document.getElementById(canvasId), {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {
+                            label: 'No.2',
+                            data: data2,
+                            borderColor: '#3b82f6',
+                            backgroundColor: '#3b82f6',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'No.3',
+                            data: data3,
+                            borderColor: '#f97316',
+                            backgroundColor: '#f97316',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'No.4',
+                            data: data4,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: '#8b5cf6',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    layout: {
+                        padding: { top: 20, bottom: 20 }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: '相对时间 (s) - 0s 对齐右脚离地' },
+                            min: -0.2,
+                            max: max_relative_end + 0.05
+                        },
+                        y: {
+                            title: { display: true, text: yAxisConfig?.title || '数值' },
+                            min: 0,
+                            max: yAxisConfig?.max || undefined
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true },
+                        datalabels: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => `相对时间: ${items[0].parsed.x.toFixed(3)}s`
+                            }
+                        }
+                    }
+                },
+                plugins: [verticalLinesPlugin]
+            });
+
+            // 生成数据表格
+            const createTable = (containerId, events2, events3, events4, data2, data3, data4) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                // 定义关键时刻标签
+                const labels = ['右离', '左离', '右落', '左落', '出手'];
+                
+                // 辅助函数：查找最接近时刻的数值
+                const findValueAtTime = (data, t) => {
+                    // data.x 是相对时间，t 也是相对时间
+                    // 找到 x 最接近 t 的点
+                    if (!data || data.length === 0) return '-';
+                    const closest = data.reduce((prev, curr) => 
+                        Math.abs(curr.x - t) < Math.abs(prev.x - t) ? curr : prev
+                    );
+                    return closest.y.toFixed(2);
+                };
+
+                let html = `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>投次</th>
+                                ${labels.map(l => `<th>${l}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                // No.2 Row
+                html += `<tr><td><strong>No.2</strong></td>`;
+                events2.forEach(e => {
+                    html += `<td>${findValueAtTime(data2, e.t)}</td>`;
+                });
+                html += `</tr>`;
+
+                // No.3 Row
+                html += `<tr><td><strong>No.3</strong></td>`;
+                events3.forEach(e => {
+                    html += `<td>${findValueAtTime(data3, e.t)}</td>`;
+                });
+                html += `</tr>`;
+
+                // No.4 Row
+                html += `<tr><td><strong>No.4</strong></td>`;
+                events4.forEach(e => {
+                    html += `<td>${findValueAtTime(data4, e.t)}</td>`;
+                });
+                html += `</tr>`;
+
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            };
+
+            // 调用生成表格
+            const tableId = canvasId.replace('Chart', 'Table');
+            createTable(tableId, events2, events3, events4, data2, data3, data4);
+        }
+
+        createPhaseChart('ballSpeedChart', 'ball_speed', { title: '速度 (m/s)', max: 14 });
+        createPhaseChart('elbowChart', 'elbow_r', { title: '角度 (°)', max: 180 });
+        createPhaseChart('kneeChart', 'knee_r', { title: '角度 (°)', max: 180 });
+        createPhaseChart('kneeLChart', 'knee_l', { title: '角度 (°)', max: 180 });
+        createPhaseChart('trunkChart', 'trunk_inc', { title: '角度 (°)', max: 90 });
+        createPhaseChart('sepChart', 'hip_shoulder', { title: '角度 (°)', max: 90 });
+
+    </script>
+</body>
+</html>
